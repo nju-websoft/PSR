@@ -6,15 +6,31 @@ This guide provides step-by-step instructions for setting up a local Freebase kn
 
 | Component | Version | Source |
 |-----------|---------|--------|
-| OpenLink Virtuoso | 7.2.5 | [Download](public_link) |
+| OpenLink Virtuoso | 7.2.5 | [SourceForge Download](https://sourceforge.net/projects/virtuoso/files/virtuoso/7.2.5/virtuoso-opensource.x86_64-generic_glibc25-linux-gnu.tar.gz/download) |
 | Python | 3.x | - |
-| Freebase RDF Dump | - | [Download](public_link) |
+| Freebase RDF Dump | - | [Google Developers](https://developers.google.com/freebase) |
 
 ## Setup Instructions
 
-### Step 1: Data Preprocessing
+### Option A: Use Pre-processed Virtuoso Database (Recommended)
 
-The raw Freebase dump contains multilingual data. We filter it to retain only English and numeric triplets using a preprocessing script.
+The official Freebase dump has some literal format issues that may cause import failures. The [dki-lab/Freebase-Setup](https://github.com/dki-lab/Freebase-Setup) project provides a pre-processed Virtuoso database file:
+
+```bash
+# Download pre-processed database (~53GB)
+wget https://www.dropbox.com/s/q38g0fwx1a3lz8q/virtuoso_db.zip
+
+# Extract
+unzip virtuoso_db.zip
+```
+
+Then skip to **Step 2** below.
+
+### Option B: Import from Raw Data
+
+#### Step 1: Data Preprocessing
+
+The raw Freebase dump contains multilingual data. We filter it to retain only English and numeric triplets.
 
 ```bash
 # Decompress the Freebase dump (~400GB uncompressed)
@@ -24,7 +40,7 @@ gunzip -c freebase-rdf-latest.gz > freebase
 nohup python -u FilterEnglishTriplets.py < freebase > FilterFreebase 2> log_err &
 ```
 
-The filtering script is available [here](public_link).
+**Note**: The `FilterEnglishTriplets.py` script filters non-English literals. You can also use the [fix_freebase_literal_format.py](https://github.com/dki-lab/Freebase-Setup/blob/master/fix_freebase_literal_format.py) script from dki-lab to fix literal format issues. For more data processing tools, see [nchah/freebase-triples](https://github.com/nchah/freebase-triples).
 
 ### Step 2: Install and Configure Virtuoso
 
@@ -68,10 +84,12 @@ rdf_loader_run();
 
 ### Step 5: Wikidata Mapping (Optional)
 
-Some entities in the Freebase dump have incomplete relationships. To supplement this data, you can import Wikidata mappings:
+Some entities in the Freebase dump have incomplete relationships. To supplement this data, you can import Freebase-Wikidata mappings:
 
-1. Download the Wikidata RDF mappings from [here](public_link)
+1. Download the mappings from [Google Developers - Freebase](https://developers.google.com/freebase) (see "Freebase/Wikidata Mappings" section)
 2. Use the same import method described in Step 4
+
+For additional mapping tools, see [google/freebase-wikidata-converter](https://github.com/google/freebase-wikidata-converter).
 
 ## Verification
 
@@ -120,3 +138,11 @@ if __name__ == "__main__":
 | Connection refused | Ensure Virtuoso service is running |
 | Import hangs | Check disk space and increase `NumberOfBuffers` in `virtuoso.ini` |
 | Query timeout | Adjust `MaxQueryExecutionTime` in Virtuoso configuration |
+| Literal format errors | Use [fix_freebase_literal_format.py](https://github.com/dki-lab/Freebase-Setup/blob/master/fix_freebase_literal_format.py) to preprocess data |
+
+## References
+
+- [Virtuoso Bulk RDF Loader Documentation](http://vos.openlinksw.com/owiki/wiki/VOS/VirtBulkRDFLoader)
+- [Freebase Basic Concepts](https://developers.google.com/freebase/guide/basic_concepts)
+- [Freebase-MQL Overview](https://github.com/nchah/freebase-mql)
+- [dki-lab/Freebase-Setup](https://github.com/dki-lab/Freebase-Setup) - Pre-processed database and utilities
